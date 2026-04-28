@@ -21,6 +21,12 @@ if (!function_exists('str_starts_with')) {
 const BDWNL_VERSION    = '2.0.0';
 const BDWNL_OPT_PREFIX = 'bdwnl_';
 const BDWNL_PAGE_SLUG  = 'blocker_page';
+const BDWNL_TEXTDOMAIN = 'block-details-while-not-login';
+
+yourls_add_action('plugins_loaded', 'bdwnl_load_textdomain');
+function bdwnl_load_textdomain(): void {
+    yourls_load_custom_textdomain(BDWNL_TEXTDOMAIN, dirname(__FILE__) . '/languages');
+}
 
 function bdwnl_defaults(): array {
     return [
@@ -113,9 +119,10 @@ function bdwnl_render_block_page(): void {
 }
 
 function bdwnl_render_message_page(?string $redirect, int $delay): void {
-    $i18n  = bdwnl_i18n();
-    $title = bdwnl_opt('title')   !== '' ? bdwnl_opt('title')   : $i18n['denied'];
-    $msg   = bdwnl_opt('message') !== '' ? bdwnl_opt('message') : $i18n['no_permission'];
+    $stored_title = bdwnl_opt('title');
+    $stored_msg   = bdwnl_opt('message');
+    $title = $stored_title !== '' ? $stored_title : yourls__('Access Denied', BDWNL_TEXTDOMAIN);
+    $msg   = $stored_msg   !== '' ? $stored_msg   : yourls__('You do not have permission to access this page.', BDWNL_TEXTDOMAIN);
     $js    = bdwnl_opt('inject_js');
 
     if (!yourls_did_action('html_head')) {
@@ -139,7 +146,7 @@ function bdwnl_render_message_page(?string $redirect, int $delay): void {
     echo yourls_apply_filter('die_title',   '<h2>' . yourls_esc_html($title) . '</h2>');
     echo yourls_apply_filter('die_message', '<p>' . yourls_esc_html($msg) . '</p>');
     if ($redirect !== null && $delay > 0) {
-        echo '<p><small>' . yourls_esc_html(yourls_s($i18n['redirecting_in'], $delay)) . '</small></p>';
+        echo '<p><small>' . yourls_esc_html(yourls_s(yourls__('Redirecting in %s seconds…', BDWNL_TEXTDOMAIN), $delay)) . '</small></p>';
     }
     echo '</div>';
 
@@ -150,25 +157,26 @@ function bdwnl_render_message_page(?string $redirect, int $delay): void {
 
 yourls_add_action('plugins_loaded', 'bdwnl_register_admin_page');
 function bdwnl_register_admin_page(): void {
+    // The plugin name (menu item) is intentionally NOT translated, matching
+    // the plugin's GitHub identity and keeping the admin sidebar stable
+    // regardless of YOURLS_LANG.
     yourls_register_plugin_page(
         BDWNL_PAGE_SLUG,
-        bdwnl_i18n()['setting_page'],
+        'block-details-while-not-login',
         'bdwnl_settings_controller'
     );
 }
 
 function bdwnl_settings_controller(): void {
-    $i18n = bdwnl_i18n();
-
     if (isset($_POST['bdwnl_save'])) {
         yourls_verify_nonce(BDWNL_PAGE_SLUG);
         bdwnl_save_settings($_POST);
-        yourls_add_notice(yourls_esc_html($i18n['saved']));
+        yourls_add_notice(yourls_esc_html(yourls__('Settings saved.', BDWNL_TEXTDOMAIN)));
     }
     if (isset($_POST['bdwnl_reset'])) {
         yourls_verify_nonce(BDWNL_PAGE_SLUG);
         bdwnl_reset_settings();
-        yourls_add_notice(yourls_esc_html($i18n['reset']));
+        yourls_add_notice(yourls_esc_html(yourls__('Settings reset to defaults.', BDWNL_TEXTDOMAIN)));
     }
 
     bdwnl_render_settings_form();
@@ -194,35 +202,41 @@ function bdwnl_reset_settings(): void {
 }
 
 function bdwnl_render_settings_form(): void {
-    $i18n  = bdwnl_i18n();
     $nonce = yourls_create_nonce(BDWNL_PAGE_SLUG);
 
     echo bdwnl_styles();
     ?>
-    <h2><?php echo yourls_esc_html($i18n['setting_page']); ?>
+    <h2>block-details-while-not-login
         <small style="font-weight:normal;color:#888;">v<?php echo BDWNL_VERSION; ?></small></h2>
 
     <p class="bdwnl-tip">
         <span class="bdwnl-tip-icon">⚠</span>
-        <?php echo $i18n['recommend_tip']; ?>
+        <?php echo yourls_s(
+            /* translators: %s is an HTML link to the YOURLS PR #2747 comment */
+            yourls__('Tip: also rename the %1$s/admin/%2$s directory and create a %1$suser/cache.php%2$s filter to mask the admin URL — see %3$sYOURLS PR #2747%4$s.', BDWNL_TEXTDOMAIN),
+            '<code>',
+            '</code>',
+            '<a href="https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797" target="_blank" rel="noopener noreferrer">',
+            '</a>'
+        ); ?>
     </p>
 
     <form method="post" class="bdwnl-form">
         <input type="hidden" name="nonce" value="<?php echo yourls_esc_attr($nonce); ?>" />
 
         <fieldset>
-            <legend><?php echo yourls_esc_html($i18n['block_page_config']); ?></legend>
+            <legend><?php yourls_e('Block Page Configuration', BDWNL_TEXTDOMAIN); ?></legend>
 
             <div class="bdwnl-row bdwnl-row-toggle">
                 <label class="bdwnl-toggle">
                     <input type="checkbox" name="<?php echo BDWNL_OPT_PREFIX; ?>enabled" value="1"
                         <?php echo bdwnl_opt('enabled') === '1' ? 'checked' : ''; ?>>
-                    <strong><?php echo yourls_esc_html($i18n['is_enable']); ?></strong>
+                    <strong><?php yourls_e('Enable blocking', BDWNL_TEXTDOMAIN); ?></strong>
                 </label>
             </div>
 
             <div class="bdwnl-row">
-                <label for="bdwnl_http_code"><?php echo yourls_esc_html($i18n['http_code']); ?></label>
+                <label for="bdwnl_http_code"><?php yourls_e('HTTP status code', BDWNL_TEXTDOMAIN); ?></label>
                 <select id="bdwnl_http_code" name="<?php echo BDWNL_OPT_PREFIX; ?>http_code">
                     <?php foreach (['401', '403', '404', '410', '451'] as $code) {
                         $sel = bdwnl_opt('http_code') === $code ? ' selected' : '';
@@ -232,41 +246,41 @@ function bdwnl_render_settings_form(): void {
             </div>
 
             <div class="bdwnl-row">
-                <label for="bdwnl_title"><?php echo yourls_esc_html($i18n['display_title']); ?></label>
+                <label for="bdwnl_title"><?php yourls_e('Display title', BDWNL_TEXTDOMAIN); ?></label>
                 <input type="text" id="bdwnl_title" name="<?php echo BDWNL_OPT_PREFIX; ?>title"
                        value="<?php echo yourls_esc_attr(bdwnl_opt('title')); ?>"
-                       placeholder="<?php echo yourls_esc_attr($i18n['denied']); ?>">
+                       placeholder="<?php echo yourls_esc_attr(yourls__('Access Denied', BDWNL_TEXTDOMAIN)); ?>">
             </div>
 
             <div class="bdwnl-row">
-                <label for="bdwnl_message"><?php echo yourls_esc_html($i18n['display_message']); ?></label>
+                <label for="bdwnl_message"><?php yourls_e('Display message', BDWNL_TEXTDOMAIN); ?></label>
                 <input type="text" id="bdwnl_message" name="<?php echo BDWNL_OPT_PREFIX; ?>message"
                        value="<?php echo yourls_esc_attr(bdwnl_opt('message')); ?>"
-                       placeholder="<?php echo yourls_esc_attr($i18n['no_permission']); ?>">
+                       placeholder="<?php echo yourls_esc_attr(yourls__('You do not have permission to access this page.', BDWNL_TEXTDOMAIN)); ?>">
             </div>
 
             <div class="bdwnl-row bdwnl-row-toggle">
                 <label class="bdwnl-toggle">
                     <input type="checkbox" name="<?php echo BDWNL_OPT_PREFIX; ?>show_branding" value="1"
                         <?php echo bdwnl_opt('show_branding') === '1' ? 'checked' : ''; ?>>
-                    <?php echo yourls_esc_html($i18n['show_branding']); ?>
+                    <?php yourls_e('Show YOURLS branding header', BDWNL_TEXTDOMAIN); ?>
                 </label>
             </div>
         </fieldset>
 
         <fieldset>
-            <legend><?php echo yourls_esc_html($i18n['redirect_section']); ?></legend>
+            <legend><?php yourls_e('Redirect (optional)', BDWNL_TEXTDOMAIN); ?></legend>
 
             <div class="bdwnl-row">
-                <label for="bdwnl_redirect_url"><?php echo yourls_esc_html($i18n['redirect_url']); ?></label>
+                <label for="bdwnl_redirect_url"><?php yourls_e('Redirect URL', BDWNL_TEXTDOMAIN); ?></label>
                 <input type="url" id="bdwnl_redirect_url" name="<?php echo BDWNL_OPT_PREFIX; ?>redirect_url"
                        value="<?php echo yourls_esc_attr(bdwnl_opt('redirect_url')); ?>"
                        placeholder="https://example.com/">
             </div>
-            <p class="bdwnl-help"><?php echo yourls_esc_html($i18n['redirect_help']); ?></p>
+            <p class="bdwnl-help"><?php yourls_e('If set with delay 0, guests are redirected immediately. With a delay, the message is shown first.', BDWNL_TEXTDOMAIN); ?></p>
 
             <div class="bdwnl-row">
-                <label for="bdwnl_redirect_after"><?php echo yourls_esc_html($i18n['redirect_after']); ?></label>
+                <label for="bdwnl_redirect_after"><?php yourls_e('Delay (seconds)', BDWNL_TEXTDOMAIN); ?></label>
                 <input type="number" min="0" max="60" id="bdwnl_redirect_after"
                        name="<?php echo BDWNL_OPT_PREFIX; ?>redirect_after"
                        value="<?php echo yourls_esc_attr(bdwnl_opt('redirect_after')); ?>">
@@ -274,25 +288,25 @@ function bdwnl_render_settings_form(): void {
         </fieldset>
 
         <fieldset>
-            <legend><?php echo yourls_esc_html($i18n['advanced_section']); ?></legend>
+            <legend><?php yourls_e('Advanced', BDWNL_TEXTDOMAIN); ?></legend>
 
             <div class="bdwnl-row bdwnl-row-textarea">
-                <label for="bdwnl_inject_js"><?php echo yourls_esc_html($i18n['inject_js']); ?></label>
+                <label for="bdwnl_inject_js"><?php yourls_e('Inject JavaScript', BDWNL_TEXTDOMAIN); ?></label>
                 <textarea id="bdwnl_inject_js" name="<?php echo BDWNL_OPT_PREFIX; ?>inject_js"
                           rows="4"
                           placeholder="setTimeout(()=>location.pathname='', 5000)"
                 ><?php echo yourls_esc_html(bdwnl_opt('inject_js')); ?></textarea>
             </div>
-            <p class="bdwnl-help"><?php echo yourls_esc_html($i18n['inject_js_help']); ?></p>
+            <p class="bdwnl-help"><?php yourls_e('Wrapped in an IIFE on render. Trusted, admin-supplied code only.', BDWNL_TEXTDOMAIN); ?></p>
         </fieldset>
 
         <div class="bdwnl-actions">
-            <input type="submit" name="bdwnl_save" value="<?php echo yourls_esc_attr($i18n['update']); ?>"
+            <input type="submit" name="bdwnl_save" value="<?php echo yourls_esc_attr(yourls__('Save changes', BDWNL_TEXTDOMAIN)); ?>"
                    class="button-primary">
             <input type="submit" name="bdwnl_reset"
-                   value="<?php echo yourls_esc_attr($i18n['reset_button']); ?>"
+                   value="<?php echo yourls_esc_attr(yourls__('Reset to defaults', BDWNL_TEXTDOMAIN)); ?>"
                    class="button"
-                   onclick="return confirm('<?php echo yourls_esc_attr($i18n['reset_confirm']); ?>');">
+                   onclick="return confirm('<?php echo yourls_esc_attr(yourls__('Reset all settings to defaults?', BDWNL_TEXTDOMAIN)); ?>');">
         </div>
     </form>
     <?php
@@ -324,91 +338,4 @@ function bdwnl_styles(): string {
 }
 </style>
 CSS;
-}
-
-function bdwnl_i18n(): array {
-    static $cache = null;
-    if ($cache !== null) return $cache;
-
-    $bundle = [
-        'en_US' => [
-            'denied'             => 'Access Denied',
-            'no_permission'      => 'You do not have permission to access this page.',
-            'block_page_config'  => 'Block Page Configuration',
-            'is_enable'          => 'Enable blocking',
-            'http_code'          => 'HTTP status code',
-            'display_title'      => 'Display title',
-            'display_message'    => 'Display message',
-            'show_branding'      => 'Show YOURLS branding header',
-            'redirect_section'   => 'Redirect (optional)',
-            'redirect_url'       => 'Redirect URL',
-            'redirect_after'     => 'Delay (seconds)',
-            'redirect_help'      => 'If set with delay 0, guests are redirected immediately. With a delay, the message is shown first.',
-            'redirecting_in'     => 'Redirecting in %s seconds…',
-            'advanced_section'   => 'Advanced',
-            'inject_js'          => 'Inject JavaScript',
-            'inject_js_help'     => 'Wrapped in an IIFE on render. Trusted, admin-supplied code only.',
-            'setting_page'       => 'Block Details Page',
-            'update'             => 'Save changes',
-            'reset_button'       => 'Reset to defaults',
-            'reset_confirm'      => 'Reset all settings to defaults?',
-            'saved'              => 'Settings saved.',
-            'reset'              => 'Settings reset to defaults.',
-            'recommend_tip'      => 'Tip: also rename the <code>/admin/</code> directory and create a <code>user/cache.php</code> filter to mask the admin URL — see <a href="https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797" target="_blank" rel="noopener noreferrer">YOURLS PR #2747</a>.',
-        ],
-        'zh_CN' => [
-            'denied'             => '禁止访问',
-            'no_permission'      => '您无权访问此页面。',
-            'block_page_config'  => '禁止访问配置',
-            'is_enable'          => '启用屏蔽',
-            'http_code'          => 'HTTP 状态码',
-            'display_title'      => '显示标题',
-            'display_message'    => '显示消息',
-            'show_branding'      => '显示 YOURLS 品牌头部',
-            'redirect_section'   => '重定向（可选）',
-            'redirect_url'       => '重定向 URL',
-            'redirect_after'     => '延迟（秒）',
-            'redirect_help'      => '若延迟为 0，访客将立即跳转；非零时先显示消息再跳转。',
-            'redirecting_in'     => '%s 秒后重定向…',
-            'advanced_section'   => '高级',
-            'inject_js'          => '注入 JavaScript',
-            'inject_js_help'     => '渲染时被包裹在 IIFE 中。仅限管理员提供的可信代码。',
-            'setting_page'       => '详情页屏蔽配置',
-            'update'             => '保存更改',
-            'reset_button'       => '恢复默认值',
-            'reset_confirm'      => '将所有设置恢复为默认值？',
-            'saved'              => '设置已保存。',
-            'reset'              => '已恢复默认设置。',
-            'recommend_tip'      => '建议：同时重命名 <code>/admin/</code> 目录并创建 <code>user/cache.php</code> 过滤器以掩盖后台地址——参见 <a href="https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797" target="_blank" rel="noopener noreferrer">YOURLS PR #2747</a>。',
-        ],
-        'nl_NL' => [
-            'denied'             => 'Toegang geweigerd',
-            'no_permission'      => 'U heeft geen toegang tot deze pagina.',
-            'block_page_config'  => 'Blokkade-instellingen',
-            'is_enable'          => 'Blokkeren inschakelen',
-            'http_code'          => 'HTTP-statuscode',
-            'display_title'      => 'Titel',
-            'display_message'    => 'Bericht',
-            'show_branding'      => 'YOURLS-merkkop tonen',
-            'redirect_section'   => 'Doorverwijzing (optioneel)',
-            'redirect_url'       => 'Doorverwijs-URL',
-            'redirect_after'     => 'Vertraging (seconden)',
-            'redirect_help'      => 'Vertraging 0 stuurt direct door. Bij een vertraging wordt eerst de boodschap getoond.',
-            'redirecting_in'     => 'Over %s seconden wordt u doorverwezen…',
-            'advanced_section'   => 'Geavanceerd',
-            'inject_js'          => 'JavaScript injecteren',
-            'inject_js_help'     => 'Wordt verpakt in een IIFE bij het renderen. Alleen vertrouwde admin-code.',
-            'setting_page'       => 'Blokkade detailpagina',
-            'update'             => 'Wijzigingen opslaan',
-            'reset_button'       => 'Standaardwaarden herstellen',
-            'reset_confirm'      => 'Alle instellingen herstellen?',
-            'saved'              => 'Instellingen opgeslagen.',
-            'reset'              => 'Standaardinstellingen hersteld.',
-            'recommend_tip'      => 'Tip: hernoem ook de <code>/admin/</code>-map en maak een <code>user/cache.php</code>-filter om de admin-URL te verbergen — zie <a href="https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797" target="_blank" rel="noopener noreferrer">YOURLS PR #2747</a>.',
-        ],
-    ];
-
-    $lang  = defined('YOURLS_LANG') ? YOURLS_LANG : 'en_US';
-    $cache = $bundle[$lang] ?? $bundle['en_US'];
-    return $cache;
 }

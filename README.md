@@ -6,7 +6,7 @@ A plugin for [YOURLS](https://yourls.org/) that blocks the URL details/stats pag
 
 > **v2.0.0 — Compatible with YOURLS 1.10+ and PHP 7.4 through 8.5**
 >
-> v1.x users: this version fixes the *"Unauthorized action or expired link"* login error caused by the old `require_auth` hook on YOURLS 1.10+. See [CHANGELOG.md](CHANGELOG.md) for details. Existing `tao_*` settings are migrated automatically — no reconfiguration required.
+> v1.x users: this version fixes the *"Unauthorized action or expired link"* login error caused by the old `require_auth` hook on YOURLS 1.10+. Existing `tao_*` settings are migrated automatically — no reconfiguration required.
 
 # Features | 特性
 
@@ -16,7 +16,9 @@ A plugin for [YOURLS](https://yourls.org/) that blocks the URL details/stats pag
 |:--:|:--:|:--:|
 |![Alt text](./imgs/1.png)|![Alt text](./imgs/1_cn.png)|*nl_NL added in 2.0.0*|
 
-> Currently shipped: `en_US`, `zh_CN`, `nl_NL`. Falls back to `en_US` for any other locale.
+> Translations are loaded via standard YOURLS gettext (`yourls_load_custom_textdomain`). Shipped: `en_US` (built-in), `zh_CN`, `nl_NL`. Other locales fall back to English.
+>
+> Adding a language: copy `languages/block-details-while-not-login.pot` to `block-details-while-not-login-<locale>.po`, translate, then `msgfmt -o block-details-while-not-login-<locale>.mo block-details-while-not-login-<locale>.po`.
 
 ## Safety | 安全
 
