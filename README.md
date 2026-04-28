@@ -1,4 +1,4 @@
-# block-details-while-not-login
+# YOURLS plujgin - Block Linkstats when not logged in
 
 A plugin for [YOURLS](https://yourls.org/) that blocks the URL details/stats page (`yourls-infos.php`) for unauthenticated visitors.
 
