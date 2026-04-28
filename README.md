@@ -1,34 +1,33 @@
-# block-details-while-not-login | 未登录时屏蔽详情页
+# block-details-while-not-login
 
 A plugin for [YOURLS](https://yourls.org/) that blocks the URL details/stats page (`yourls-infos.php`) for unauthenticated visitors.
 
-[YOURLS](https://yourls.org/) 的插件，在未登录时屏蔽详情页
+> 🇨🇳 中文版本请见 [README.zh_CN.md](README.zh_CN.md)
 
 > **v2.0.0 — Compatible with YOURLS 1.10+ and PHP 7.4 through 8.5**
 >
 > v1.x users: this version fixes the *"Unauthorized action or expired link"* login error caused by the old `require_auth` hook on YOURLS 1.10+. Existing `tao_*` settings are migrated automatically — no reconfiguration required.
 
-# Features | 特性
+## Features
 
-## Multilingual | 多语言
+### Multilingual
 
 | English | 中文 | Nederlands |
 |:--:|:--:|:--:|
-|![Alt text](./imgs/1.png)|![Alt text](./imgs/1_cn.png)|*nl_NL added in 2.0.0*|
+| ![English UI](./imgs/1.png) | ![Chinese UI](./imgs/1_cn.png) | *nl_NL added in 2.0.0* |
 
 > Translations are loaded via standard YOURLS gettext (`yourls_load_custom_textdomain`). Shipped: `en_US` (built-in), `zh_CN`, `nl_NL`. Other locales fall back to English.
 >
-> Adding a language: copy `languages/block-details-while-not-login.pot` to `block-details-while-not-login-<locale>.po`, translate, then `msgfmt -o block-details-while-not-login-<locale>.mo block-details-while-not-login-<locale>.po`.
+> **Adding a language:** copy `languages/block-details-while-not-login.pot` to `block-details-while-not-login-<locale>.po`, translate the strings, then `msgfmt -o block-details-while-not-login-<locale>.mo block-details-while-not-login-<locale>.po`.
 
-## Safety | 安全
+### Safety
 
-| Before \| 曾经 | Now \| 现状 |
+| Before | Now |
 |:--:|:--:|
-|![Alt text](./imgs/2.png)|![Alt text](./imgs/3.png)|
+| ![Before — public details](./imgs/2.png) | ![After — blocked](./imgs/3.png) |
 | :x: Risk of brute-force attacks and malicious requests | :white_check_mark: Safe! |
-| :x: 后台存在爆破和恶意请求风险 | :white_check_mark: 安全！|
 
-## Customization | 自定义
+### Customization
 
 - Configurable HTTP status code (401 / 403 / 404 / 410 / 451)
 - Custom title and message text
@@ -37,22 +36,18 @@ A plugin for [YOURLS](https://yourls.org/) that blocks the URL details/stats pag
 - Toggle the YOURLS branding header
 - "Reset to defaults" button
 
-| ![Alt text](./imgs/1.png) | ![Alt text](./imgs/1_cn.png) |
+| ![English UI](./imgs/1.png) | ![Chinese UI](./imgs/1_cn.png) |
 |:--:|:--:|
 
-> The image shows an example of a jump to the home page after 5 seconds
->
-> 图片上显示的是5秒后跳转到主页的例子
+> The image shows an example of jumping to the home page after 5 seconds.
 
-# Installation | 安装
+## Installation
 
-1. Download the plugin (or `git clone` this repo) into `user/plugins/block-details-while-not-login/`
-2. Activate it in **Manage Plugins** in your YOURLS admin
-3. Visit **Block Details Page** in the plugin list to configure
+1. Download the plugin (or `git clone` this repo) into `user/plugins/block-details-while-not-login/`.
+2. Activate it in **Manage Plugins** in your YOURLS admin.
+3. Visit the **block-details-while-not-login** entry in the plugin sidebar to configure.
 
-安装YOURLS，安装插件，打开插件，配置里启用
-
-# Hardening recommendation | 加固建议
+## Hardening recommendation
 
 Even with this plugin, a guest can still find your `/admin/` login form by guessing the URL. To remove that surface entirely, follow ozh's two-step trick from [YOURLS PR #2747 comment 689047797](https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797):
 
@@ -69,11 +64,7 @@ Even with this plugin, a guest can still find your `/admin/` login form by guess
 
 This rewrites every YOURLS-generated admin URL to your secret name so links keep working, while crawlers and brute-forcers can't find the login form at the conventional path.
 
-> 正如插件配置页说的那样，推荐隐藏修改后台入口，参见[【这里】](https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797)
->
-> As written in the plugin configuration page, it is recommended to hide the modified backend entry, see [[here]](https://github.com/YOURLS/YOURLS/pull/2747#issuecomment-689047797)
-
-# Compatibility | 兼容性
+## Compatibility
 
 | YOURLS  | PHP            | Status |
 |:-------:|:--------------:|:------:|
@@ -81,10 +72,10 @@ This rewrites every YOURLS-generated admin URL to your secret name so links keep
 | 1.10+   | 8.0–8.5        | ✓ Recommended |
 | 1.10+   | (v1.x plugin)  | :x: Login broken — upgrade to v2.0.0 |
 
-# License
+## License
 
 GPL-3.0. See [LICENSE](LICENSE).
 
 ---
 
-PS: YOURLS最新版的汉化也是我，可以访问[我的翻译仓库](https://github.com/taozhiyu/yourls-translation-zh_CN)
+PS: I am also the maintainer of the latest Simplified Chinese translation of YOURLS. See [my translation repo](https://github.com/taozhiyu/yourls-translation-zh_CN).
